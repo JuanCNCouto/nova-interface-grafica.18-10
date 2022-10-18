@@ -1,0 +1,76 @@
+from cgitb import text
+from datetime import date
+from pickle import FALSE, TRUE
+import tkinter as tk
+from tkinter import ttk
+from turtle import width
+import tk_tools
+import serial
+import time
+import matplotlib.pyplot as plt
+#width= largura
+largura = 1000 
+#height altura
+altura = 600
+janela= tk.Tk()
+
+janela.title("Projeto todos nas ciências")
+janela.geometry(f'{largura}x{altura}')
+frame1= tk.Frame(janela,height=30)
+frame2= tk.Frame(janela,height=570,width=80)
+frame3= tk.Frame(janela,height=570,width=80)
+frame4= tk.Frame(janela,height=570,width=80)
+frame1.place(relx=0,rely=0,relwidth=1)
+frame2.place(relx=0,rely=0.05,relwidth=0.2,relheight=1)
+frame3.place(relx=0.33,rely=0.05,relwidth=0.4,relheight=1)
+frame4.place(relx=0.66,rely=0.05,relwidth=0.4,relheight=1)
+######################################### FRAME 1 - BOTOES DE CONECTAR ARDUINO- ############################################
+btn_conectar= tk.Button(frame1,text="conectar",command= print('conectar'),)
+btn_conectar.place(relx=0.62)
+
+btn_desconectar= tk.Button(frame1,text='desconectar arduino',command= print('desconectar'))
+btn_desconectar.place(relx=0.80)
+led= tk_tools.Led(janela,size=25)
+led.place(relx=0)
+led.to_red(on=True)
+
+texto_arduino= tk.StringVar()
+texto_arduino.set("Arduino desconectado")
+ard_label= tk.Label(frame1,textvariable = texto_arduino,pady=7)
+ard_label.place(relx=0.05)
+
+ttk.Separator(frame2, orient='vertical').place(relheight=1,relx=0.9974)
+ttk.Separator(frame1,orient='horizontal').place(relwidth=1,rely=0.999)
+
+##############################- FRAME 2- ENTRADA DE VOLUME, BOTOES DE MEDIR,PLOTAR GRAFICO E SALVAR - ##########################
+
+volume_txt=tk.Label(frame2,text="volume indicado em mL :") 
+volume_entry_var=tk.StringVar()
+volume_entry= tk.Entry(frame2,textvariable= volume_entry_var,width=20)
+volume_txt.place(rely=0.05, relx=0.2)
+volume_entry.place( rely=0.10,relx=0.2)
+
+temp_var = tk.StringVar()
+temp_var.set("Temperatura (°C): None")
+temp_txt = tk.Label(frame2,textvariable=temp_var,pady=30)
+temp_txt.place( rely= 0.15, relx=0.2)
+
+pressao_var = tk.StringVar()
+pressao_var.set("Pressão (HPa): None")
+pressao_txt = tk.Label(frame2,textvariable=pressao_var,pady=30)
+pressao_txt.place(rely=0.30, relx=0.2)
+
+btn_medir= tk.Button(frame2,text='medir',command=print('medir'),pady=15,padx=30)
+btn_medir.place( rely=0.45, relx=0.2)
+
+btn_salvar= tk.Button(frame2,text='salvar medidas',command=print('salvar'),pady=15,padx=30)
+btn_salvar.place( rely=0.60, relx=0.2)
+
+btn_plotar= tk.Button(frame2,text='plotar',command=print('salvar'),pady=15,padx=30)
+btn_plotar.place( rely=0.75, relx=0.2)
+
+##########################################- FRAME 3 -##################################
+
+
+
+janela.mainloop()
