@@ -9,13 +9,12 @@ import serial
 import time
 import matplotlib.pyplot as plt
 import pandas 
+
+
+
 #width= largura
 largura = 1000 
 #height altura
-
-tab={'P(Pa)': [],'T(C)':[],'V(ml)':[]}
-
-tab_df=pandas.DataFrame(tab)
 
 start = 0
 #variavel de controle para o modo de manipulação de arquivos
@@ -42,12 +41,140 @@ temperatura_dat= [] #lista para salvar os dados medidos enquanto o programa esta
 volume_graf = [] #lista para salvar os dados medidos enquanto o programa esta rodando 
 
 pressao_graf = [] #lista para salvar os dados medidos enquanto o programa esta rodando 
-
-tab={'P(Pa)': temperatura_dat,'T(C)':volume_graf,'V(ml)': pressao_graf} #tabela 
-
-tab_df=pandas.DataFrame(tab)
-
+tab=[]
 cont=0
+
+def desconectar():
+    global ser
+
+    if(ser != 0):
+        time.sleep(1.8)
+        ser.write('d'.encode('utf-8'))
+        time.sleep(1.8)
+        resposta = ser.readline()
+        resposta = int(resposta.decode("utf-8"))
+        if(resposta):
+            texto_arduino.set('Arduino Desconectado')
+            led.to_red(on=True)
+            ser.write('n'.encode('utf-8'))
+            ser.close()
+    return
+
+def conectar():
+
+    global ser
+
+    ser = serial.Serial("COM6",9600,timeout=10)
+    time.sleep(1.8)
+    ser.write('c'.encode('utf-8'))
+    time.sleep(1.8)
+    resposta = ser.readline()
+    resposta = int(resposta.decode("utf-8"))
+    if(resposta):
+        texto_arduino.set('Arduino conectado')
+        led.to_green(on=True)
+        ser.write('n'.encode('utf-8'))
+    return
+
+
+#função para salvar os dados em um arquivo
+
+def salvar(a,b,c):# a= volume, b= pressao, c=temperatura
+
+  global start #usa a variavel global start e pode manipular ela
+  global nome #usa a variavel global nome para abrir o arquivo
+  global cont #contador das listas
+  aux= 'DES-'+nome+'.txt' # nome do arquivo com os dados salvos em float
+  print(aux) #mostra o nome do arquivo na TELA DO TERMINAL
+  if(start==0):#se realizou nenhuma medida :( entao o arquivo para salvar medidas nunca foi criado)
+    arq= open(aux,'w') #cria este arquivo usando o modo 'w'
+    arq.write(f"{a} {b} {c}") #escreve no arquivo
+    arq.close() # fecha o arquivo
+    start =  1 # realizou a primeira medida
+  if(start==1): # se realizou a primeira medida :
+    arq= open(aux,'a')#abri o arquivo no modo 'a' e adicionar os dados na ultima linha
+    arq.write(f"{a} {b} {c}") #escreve no arquivo
+    arq.close() #fecha o arquivo
+
+def plotarPT():
+    global nome
+    global pressao_graf
+    global temperatura_dat
+    #plt é uma classe do modulo
+    plt.title("Grafico pressão versus volume")# manipula o titulo
+    plt.scatter(pressao_graf,temperatura_dat)   #plot os PONTOS no grafico plt.scatter(x,y), se quiser plotar uma linha é plt.line(x,y)
+    #da para colocar nome na curva ai vc coloca plt.scatter(x,y, label= 'nome') ou plt.line(x,y, label= 'nome')
+    plt.xlabel("Pressao (HPA)") #titulo no eixo x
+    plt.ylabel("Temperatura(ºC)") #titulo no eixo y
+    aux= "GESPT-"+nome+".png" # nome do arquivo
+    print(aux) # printa NO TERMINAL o nome do arquivo png do grafico
+    plt.savefig(aux) # comando para salvar
+    imgPT = tk.PhotoImage(file=aux) 
+    graficoPT.configure(image=imgPT)
+    graficoPT.image = imgPT
+
+def plotarPV():
+    global nome,volume_graf,pressao_graf
+    #plt é uma classe do modulo
+    plt.title("Grafico pressão versus volume")# manipula o titulo
+    plt.scatter(volume_graf,pressao_graf)   #plot os PONTOS no grafico plt.scatter(x,y), se quiser plotar uma linha é plt.line(x,y)
+    #da para colocar nome na curva ai vc coloca plt.scatter(x,y, label= 'nome') ou plt.line(x,y, label= 'nome')
+    plt.xlabel("Volume (mL)") #titulo no eixo x
+    plt.ylabel("Pressao (HPA)") #titulo no eixo y
+    aux= 'GESPV-'+nome+'.png' # nome do arquivo
+    print(aux) # printa NO TERMINAL o nome do arquivo png do grafico
+    plt.savefig(aux) # comando para salvar
+    imgPV = tk.PhotoImage(file=aux) 
+    graficoPV.configure(image=imgPV)
+    graficoPV.image = img
+
+def medir():
+    global cont #contador que acompanha o indice do ultimo elemento nas listas( sempre começa em 0, isso significa q vai ser adicionado a primeira medida no arquivo)
+    
+    time.sleep(1.8)#delay
+    
+    ser.write('m'.encode('utf-8'))# transmissao da sinal q é o caracter 'm' para o arduino
+    
+    volume = float(volume_entry.get().replace(',','.'))+0.00 #leitura do volume escrito via teclado na interface
+    
+    vol_var.set(f"Volume (mL): {volume}")#altera a o numero do volume que mostra na interface grafica
+    
+    time.sleep(1.8) #delay
+    
+    temperatura = ser.readline() #le a informação que o arduino enviou para a porta USB e q foi mostrada no monitor serial
+    
+    temperatura = temperatura.decode('utf-8') #decodifica ela 
+    
+    temperatura_dat.append(temperatura) # adiciona a medida na lista temperatura_dat
+    
+    temp_var.set(f"Temperatura (°C): {temperatura}")#altera a o numero do temperatura que mostra na interface grafica
+    
+    time.sleep(1.8) #delay
+    
+    pressao = ser.readline() #le a informação que o arduino enviou para a porta USB e q foi mostrada no monitor serial
+    
+    pressao = pressao.decode('utf-8') #decodifica ela de utf-8 para float
+    
+    #UTF-8 (UCS Transformation Format 8) é a codificação de caracteres mais comum da World Wide Web.
+    
+    pressao_var.set(f"Pressão (HPa): {pressao}") #altera a o numero do pressao que mostra na interface grafica
+    
+    volume_graf.append(volume) #add a medida na lista volume_graf
+    
+    pressao_graf.append(float(pressao)) #add a medida na lista pressao_graf
+    
+    #essas listas com o '_graf' serve para plotar os pontos no grafico
+    tree.insert('',tk.END,values=[str(pressao),str(volume),str(temperatura)])
+
+    #plota o grafico
+    plotarPV()
+    plotarPT()
+    
+    salvar(volume_graf[cont],pressao_graf[cont],temperatura_dat[cont])#sempre salva ultima medida feita no arquivo
+    
+    cont +=1 #aumenta o contador pq a quantidade de elementos nas listas aumentaram 
+
+    return
 
 altura = 600
 janela= tk.Tk()
@@ -67,10 +194,10 @@ ttk.Separator(frame1,orient='horizontal').place(relwidth=1,rely=0.999)
 
 
 ######################################### FRAME 1 - BOTOES DE CONECTAR ARDUINO- ############################################
-btn_conectar= tk.Button(frame1,text="conectar",command= conectar)
+btn_conectar= tk.Button(frame1,text="conectar",command= conectar())
 btn_conectar.place(relx=0.62)
 
-btn_desconectar= tk.Button(frame1,text='desconectar arduino',command= desconectar)
+btn_desconectar= tk.Button(frame1,text='desconectar arduino',command= desconectar())
 btn_desconectar.place(relx=0.80)
 led= tk_tools.Led(janela,size=25)
 led.place(relx=0)
@@ -102,29 +229,29 @@ pressao_var.set("Pressão (HPa): None")
 pressao_txt = tk.Label(frame2,textvariable=pressao_var,pady=30)
 pressao_txt.place(rely=0.30, relx=0.2)
 
-btn_medir= tk.Button(frame2,text='medir',command= medir,pady=15,padx=30)
+btn_medir= tk.Button(frame2,text='medir',command= medir(),pady=15,padx=30)
 btn_medir.place( rely=0.45, relx=0.2)
 
-btn_salvar= tk.Button(frame2,text='salvar medidas',command=salvar ,pady=15,padx=30)
+btn_salvar= tk.Button(frame2,text='salvar medidas',command=salvar() ,pady=15,padx=30)
 btn_salvar.place( rely=0.60, relx=0.2)
 
-btn_plotar= tk.Button(frame2,text='plotar',command= plotar,pady=15,padx=30)
+btn_plotar= tk.Button(frame2,text='plotar',command= plotar(),pady=15,padx=30)
 btn_plotar.place( rely=0.75, relx=0.2)
 
 ##########################################- FRAME 3- TABELA -##################################
-tit= tk.LabelFrame(frame3,text='tabela de valores P-V-T')
-tit.pack(side='top')
-e = tk.Entry(frame3, width=20, fg='blue',font=('Arial',16,'bold')) 
-for j in range(3):
-    e.tk.Entry.insert(cont, tab[j][cont]) 
-    e.grid(row=cont, column=j)
-
+colunas=('p','v','t')
+tree= ttk.Treeview(frame3,columns=colunas,show='headings')
+tree.heading('p', text='P(hPa)')
+tree.heading('v', text='V(ml)')
+tree.heading('t', text='T(ºC)')
+tree.pack(expand=BOTH)
+tree.grid(row=0,column=0,sticky='nsew')
 
 ##########################################- FRAME 4- GRAFICOS -##################################
 
 
-graficoVP = tk.Label(frame4)
-graficoVP.place(relx=0,rely=0,relheight=0.4,relwidth=0.5)
+graficoPV = tk.Label(frame4)
+graficoPV.place(relx=0,rely=0,relheight=0.4,relwidth=0.5)
 graficoPT = tk.Label(frame4)
 graficoPT.place(relx=0,rely=0.5,relheight=0.4,relwidth=0.5)
 
