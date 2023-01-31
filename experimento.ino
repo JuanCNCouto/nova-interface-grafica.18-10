@@ -15,9 +15,9 @@ char leitura;
 void setup() {
   Serial.begin(9600);
 
-  pinMode(2,OUTPUT);
+  pinMode(2,OUTPUT);// pin do sensor
   pinMode(3,OUTPUT);
-  pinMode(4,OUTPUT);
+  pinMode(4,OUTPUT); // pin do peltier
 
   if (!bme.begin(0x76)) {
     Serial.println("Could not find a valid BME280 sensor, check wiring!");
@@ -25,43 +25,10 @@ void setup() {
   }
 }
 
-int desconectar(void)
-{
-
-  if(Serial.available())
-  { 
-      if(Serial.read() == 'd')
-      { 
-        aux=0;
-        return(1);
-      }
-      else
-        return(0); 
-
-  }
-}
-
-int conectar(void)
-{
-
-    if(Serial.available())
-    {
-
-      if(Serial.read() == 'c')
-      { 
-        aux=1;
-        return(1);
-      }
-      else
-        return(0); 
-    }
-
-}
-
 void loop() 
 { 
 
-   if(Serial.available())
+   if(Serial.available()) // teste de conexão do arduino com o pc
     {
 
       if(Serial.read() == 'c')
@@ -76,34 +43,34 @@ void loop()
 
 
 
-  while(aux == 1)
+  while(aux == 1) // enquanto o arduino conectado ao pc
   {   
 
      if(Serial.available())
       { 
         leitura = Serial.read();
-        if(leitura == 'd')
+        if(leitura == 'd') // desconecta o arduino com o pc
         { 
           aux=0;
           Serial.println(1);
           digitalWrite(3,LOW);
           digitalWrite(2,LOW);
         }
-        if(leitura == 'a'){
+        if(leitura == 'a'){ // sinal 'a' liga o peltier
           //Serial.println("entrei");
           if(co==0){
             digitalWrite(4,HIGH);
-            co=1;
+            co=1; // muda a constante para q na proxima vez q mandar o sinal 'a' o peltier vai desligar no else
             Serial.println(1);
           }
-          else{
+          else{ 
             digitalWrite(4,LOW);
-            co=0;
+            co=0;  // muda a constante para q na proxima vez q mandar o sinal 'a' o peltier vai ligar no else
             Serial.println(0);
           }
         }
           
-        if(leitura == 'm')
+        if(leitura == 'm') // sinal 'm' ativa a função de medir
         { 
           digitalWrite(2,HIGH);
           temp=pres=0;
